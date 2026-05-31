@@ -200,6 +200,7 @@ Implemented in this folder:
    - `tests/test_render_style.py`
    - `tests/test_render_warnings.py`
    - `tests/test_render_zw.py`
+   - `tests/test_ui_preview.py`
    - `tests/test_profile_loader.py`
    - `tests/test_export_bundle.py`
    - `tests/test_pseudoforge_free_cli.py`
@@ -391,6 +392,8 @@ P2 switch body reporting update:
   `tests/test_render_style.py`.
 - Forge-store aggregate/upsert, section lookup, save filename, and
   current-section preview regressions now live in `tests/test_forge_store.py`.
+- Preview syntax highlighting regressions now live in
+  `tests/test_ui_preview.py`.
 
 P0 rename identity hardening update:
 
