@@ -211,6 +211,7 @@ Implemented in this folder:
    - `tests/test_export_bundle.py`
    - `tests/test_ida_batch.py`
    - `tests/test_llm_config.py`
+   - `tests/test_llm_rename_filters.py`
    - `tests/test_logging.py`
    - `tests/test_pseudoforge_free_cli.py`
    - `tests/test_release_pseudoforge.py`
@@ -258,7 +259,7 @@ P1 renderer snapshot protection update:
   lives in `ida_pseudoforge/core/render_zw.py`.
 - Zw API probe, reused Zw status-slot, and `MmGetSystemRoutineAddress`
   indirect-call regressions now live in `tests/test_render_zw.py`; the core
-  monolith is 727 lines after the rename-heuristic split.
+  monolith is 164 lines after the LLM rename-filter split.
 - TraceLogging template switch false-positive regression now lives in
   `tests/test_render_flow.py`.
 - Known `PVOID` native signature/body-alias regression now lives in
@@ -274,6 +275,8 @@ P1 renderer snapshot protection update:
   in `tests/test_render_style.py`.
 - Deterministic rename heuristic and cfunc/text lvar merge regressions now live
   in `tests/test_rename_heuristics.py`.
+- LLM rename filtering regressions now live in
+  `tests/test_llm_rename_filters.py`.
 - `NtSetSystemInformation` m128/body rendering for typed `systemInformation`
   access, mutable alias splitting, and `userProbeEnd` recovery now lives in
   `ida_pseudoforge/core/render_ntset.py`.
@@ -793,6 +796,15 @@ Rename heuristic test-suite split validation:
 
 ```text
 python -B -m unittest tests.test_rename_heuristics tests.test_core_engine -v: 21 tests OK
+python -B -m unittest discover -s tests -v: 265 tests OK
+python -B -m compileall .\pseudoforge.py .\ida_pseudoforge .\tests .\tools: passed
+git diff --check -- .: passed
+```
+
+LLM rename-filter test-suite split validation:
+
+```text
+python -B -m unittest tests.test_llm_rename_filters tests.test_core_engine -v: 16 tests OK
 python -B -m unittest discover -s tests -v: 265 tests OK
 python -B -m compileall .\pseudoforge.py .\ida_pseudoforge .\tests .\tools: passed
 git diff --check -- .: passed

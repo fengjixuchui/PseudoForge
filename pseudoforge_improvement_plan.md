@@ -739,6 +739,10 @@ Completed:
   regressions into `tests/test_render_style.py`.
 - [x] Moved deterministic rename heuristic and cfunc/text lvar merge
   regressions into `tests/test_rename_heuristics.py`.
+- [x] Moved LLM rename filtering regressions for value invariants, weak
+  dispatcher names, pointer-bound names, PascalCase locals, generic arguments,
+  saved-argument copies, and numeric dispatcher temporaries into
+  `tests/test_llm_rename_filters.py`.
 
 Remaining:
 
@@ -749,11 +753,11 @@ Remaining:
 
 ### Current Evidence
 
-- `tests/test_core_engine.py` is 727 lines after the focused forge-store,
+- `tests/test_core_engine.py` is 164 lines after the focused forge-store,
   UI preview, RuleContext, rule-pack validator, RuleEngine, rule integration,
   IDA batch, LLM config, logging, release/version, kernel profile, DriverEntry,
   Memory Manager, IOCTL/IRP, callback, Zw/API, TraceLogging/flow, and signature
-  and NtSet/label/kernel-hint/style/rename-heuristic splits.
+  and NtSet/label/kernel-hint/style/rename-heuristic/LLM-filter splits.
 - Status literal rendering coverage now has a focused
   `tests/test_render_status.py` suite.
 - Dispatcher/profile literal coverage now has a focused
@@ -806,6 +810,8 @@ Remaining:
   `tests/test_render_style.py`.
 - Deterministic rename heuristic and cfunc/text lvar merge coverage now lives in
   `tests/test_rename_heuristics.py`.
+- LLM rename filtering coverage now lives in
+  `tests/test_llm_rename_filters.py`.
 - The status document already lists the historical monolith as deferred debt.
 - Test coverage is broad but organized mostly by accumulation rather than by
   subsystem.
@@ -830,6 +836,7 @@ conflict risk and makes it harder to identify which subsystem owns a regression.
    - `test_deterministic_rules.py`
    - `test_forge_store.py`
    - `test_rename_heuristics.py`
+   - `test_llm_rename_filters.py`
 2. Move shared fixtures into `tests/fixtures/` or `tests/helpers.py`.
 3. Add snapshot fixtures for rendered output.
 4. Keep `python -B -m unittest discover -s tests -v` as the canonical local
