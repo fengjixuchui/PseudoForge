@@ -143,6 +143,9 @@ Completed:
   compatible.
 - [x] Moved generated-code style normalization into a scoped `render_style`
   module with behavior-preserving direct tests and snapshot coverage.
+- [x] Moved dispatcher/profile literal rendering for `SYSTEM_INFORMATION_CLASS`,
+  `PROCESSINFOCLASS`, and character case labels into a scoped
+  `render_dispatcher` module.
 
 Remaining:
 
@@ -154,15 +157,16 @@ Remaining:
 ### Current Evidence
 
 - `ida_pseudoforge/core/render.py` is the largest production module at roughly
-  2080 lines after the status and style extraction slices.
+  1780 lines after the status, style, and dispatcher extraction slices.
 - `render_cleaned_pseudocode()` still coordinates many ordered text passes in
   `ida_pseudoforge/core/render.py`.
 - `ida_pseudoforge/core/render.py` preserves the public `write_export_bundle`
   import path as a compatibility wrapper around
   `ida_pseudoforge/core/export_bundle.py`.
-- Style normalization now lives in `ida_pseudoforge/core/render_style.py`, while
-  dispatcher, IOCTL, driver-entry, callback, and label rewrites remain in
-  `render.py`.
+- Style normalization now lives in `ida_pseudoforge/core/render_style.py`.
+- Dispatcher/profile literal rendering now lives in
+  `ida_pseudoforge/core/render_dispatcher.py`, while IOCTL, driver-entry,
+  callback, and label rewrites remain in `render.py`.
 
 ### Problem
 

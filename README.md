@@ -226,6 +226,7 @@ ida_pseudoforge/
     llm_assist.py
     validation.py
     render.py
+    render_dispatcher.py
     render_status.py
     render_style.py
     plan_schema.py
@@ -287,6 +288,7 @@ tests/
   test_llm_cli_provider.py
   test_profile_loader.py
   test_pseudoforge_free_cli.py
+  test_render_dispatcher.py
   test_render_snapshots.py
   test_render_style.py
   test_release_pseudoforge.py
