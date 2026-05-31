@@ -6,13 +6,17 @@ from ida_pseudoforge.core.capture import capture_from_pseudocode
 from ida_pseudoforge.core.flow_recovery import recover_flow
 from ida_pseudoforge.core.lvar_analysis import build_clean_plan
 from ida_pseudoforge.core.plan_schema import CleanPlan, FlowRewrite, FunctionCapture, RenameSuggestion
-from ida_pseudoforge.core.render import render_cleaned_pseudocode
+from ida_pseudoforge.core.render import (
+    render_cleaned_pseudocode,
+    render_switch_outline as render_clean_switch_outline,
+)
 from ida_pseudoforge.core.render_flow import (
     is_safe_switch_outline_body,
     native_switch_dispatchers,
     render_flow_report,
     render_switch_outline,
 )
+from tests.fixtures.ntset_samples import NTSET_SYSTEM_INFORMATION_SAMPLE
 
 
 def _capture() -> FunctionCapture:
@@ -70,6 +74,17 @@ __int64 __fastcall _tlgWriteTemplate_Write(__int64 a1)
 
 
 class RenderFlowTests(unittest.TestCase):
+    def test_render_ntset_switch_outline_uses_recovered_case_names(self) -> None:
+        capture = capture_from_pseudocode(NTSET_SYSTEM_INFORMATION_SAMPLE)
+        plan = build_clean_plan(capture)
+        rendered = render_clean_switch_outline(capture, plan)
+
+        self.assertIn("switch (infoClass)", rendered)
+        self.assertIn("// SystemHypervisorBootPagesInformation", rendered)
+        self.assertIn("case 235:", rendered)
+        self.assertIn("return HvlQuerySetBootPagesInfo(systemInformation, 0LL);", rendered)
+        self.assertIn("case 243:", rendered)
+
     def test_tracelogging_template_is_not_recovered_as_system_information_switch(self) -> None:
         capture = capture_from_pseudocode(TRACELOGGING_TEMPLATE_SAMPLE, name="_tlgWriteTemplate_Write")
         plan = build_clean_plan(capture)

@@ -765,22 +765,22 @@ Completed:
   samples into `tests/fixtures/snapshot_samples.py`.
 - [x] Moved plan-builder semantic recovery and shadowed duplicate-target
   warning coverage into `tests/test_plan_builder.py`.
+- [x] Moved final broad render smoke coverage into `tests/test_render_ntset.py`
+  and `tests/test_render_flow.py`, then removed `tests/test_core_engine.py`.
+- [x] Kept the full suite stable at 268 tests across the final monolith split.
 
 Remaining:
 
-- [ ] Continue moving subsystem-specific coverage out of `test_core_engine.py`
-  into focused domain suites.
 - [ ] Move shared fixtures into `tests/fixtures/` or `tests/helpers.py`.
-- [ ] Keep test count stable across each split commit.
 
 ### Current Evidence
 
-- `tests/test_core_engine.py` is 57 lines after the focused forge-store,
+- `tests/test_core_engine.py` has been removed after the focused forge-store,
   UI preview, RuleContext, rule-pack validator, RuleEngine, rule integration,
   IDA batch, LLM config, logging, release/version, kernel profile, DriverEntry,
-  Memory Manager, IOCTL/IRP, callback, Zw/API, TraceLogging/flow, and signature
-  and NtSet/label/kernel-hint/style/rename-heuristic/LLM-filter/label-tail
-  splits plus the shared NtSet fixture extraction and plan-builder split.
+  Memory Manager, IOCTL/IRP, callback, Zw/API, TraceLogging/flow, signature,
+  NtSet, label, kernel-hint, style, rename-heuristic, LLM-filter,
+  label-tail, shared-fixture, plan-builder, and final render-smoke splits.
 - Status literal rendering coverage now has a focused
   `tests/test_render_status.py` suite.
 - Dispatcher/profile literal coverage now has a focused
@@ -843,7 +843,9 @@ Remaining:
   `tests/test_llm_rename_filters.py`.
 - Plan-builder semantic recovery and shadowed duplicate-target warning coverage
   now lives in `tests/test_plan_builder.py`.
-- The status document already lists the historical monolith as deferred debt.
+- The final broad NtSet render smoke coverage now lives in
+  `tests/test_render_ntset.py`, and the final switch-outline smoke coverage now
+  lives in `tests/test_render_flow.py`.
 - Test coverage is broad but organized mostly by accumulation rather than by
   subsystem.
 

@@ -6,6 +6,8 @@ from ida_pseudoforge.core.capture import capture_from_pseudocode
 from ida_pseudoforge.core.lvar_analysis import build_clean_plan
 from ida_pseudoforge.core.render import render_cleaned_pseudocode
 from ida_pseudoforge.core.render_ntset import normalize_ntset_system_information_body
+from ida_pseudoforge.version import VERSION
+from tests.fixtures.ntset_samples import NTSET_SYSTEM_INFORMATION_SAMPLE
 
 
 NTSET_REUSED_M128_ALIAS_SAMPLE = r"""
@@ -50,6 +52,37 @@ NTSTATUS NTAPI NtSetSystemInformation(
 
 
 class RenderNtSetTests(unittest.TestCase):
+    def test_render_cleaned_ntset_pseudocode_keeps_canonical_semantics(self) -> None:
+        capture = capture_from_pseudocode(NTSET_SYSTEM_INFORMATION_SAMPLE)
+        plan = build_clean_plan(capture)
+        rendered = render_cleaned_pseudocode(capture, plan)
+
+        self.assertIn("Version: %s" % VERSION, rendered)
+        self.assertIn("infoClass", rendered)
+        self.assertIn("systemInformationLength", rendered)
+        self.assertIn("NTSTATUS NTAPI NtSetSystemInformation(", rendered)
+        self.assertIn("SYSTEM_INFORMATION_CLASS systemInformationClass,", rendered)
+        self.assertIn("PVOID systemInformation,", rendered)
+        self.assertIn("ULONG systemInformationLength)", rendered)
+        self.assertIn("NTSTATUS status;", rendered)
+        self.assertIn("previousMode = KeGetCurrentThread()->PreviousMode;", rendered)
+        self.assertNotIn("KeGetCurrentThread()->previousMode", rendered)
+        self.assertIn("STATUS_INFO_LENGTH_MISMATCH", rendered)
+        self.assertIn("STATUS_INVALID_INFO_CLASS", rendered)
+        self.assertIn("PseudoForge recovered switch view", rendered)
+        self.assertIn("switch (infoClass)", rendered)
+        self.assertIn("infoClass == SystemFlagsInformation", rendered)
+        self.assertIn("infoClass - SystemHypervisorBootPagesInformation", rendered)
+        self.assertIn("v116 = infoClass - SystemTrustedAppsRuntimeInformation;", rendered)
+        self.assertIn("if ( !v115 )", rendered)
+        self.assertIn("if ( !v116 )", rendered)
+        self.assertNotIn("v116 = v115 - 8;", rendered)
+        self.assertNotIn("infoClass == 9", rendered)
+        self.assertLess(
+            rendered.index("NTSTATUS NTAPI NtSetSystemInformation("),
+            rendered.index("PseudoForge recovered switch view"),
+        )
+
     def test_normalize_ntset_body_uses_stable_m128_alias_for_typed_access(self) -> None:
         text = "\n".join(
             [

@@ -294,11 +294,11 @@ samples/
     NtSetSystemInformation_switch_renamed.cpp
   kernel_pattern_driver/
 tests/
-  test_core_engine.py
   test_export_bundle.py
   test_ida_plugin_safety.py
   test_kernel_api_profile_builder.py
   test_llm_cli_provider.py
+  test_plan_builder.py
   test_profile_loader.py
   test_pseudoforge_free_cli.py
   test_render_callbacks.py

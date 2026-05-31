@@ -181,7 +181,6 @@ Implemented in this folder:
    - IDA LLM configuration dialog logic is isolated in `ida_pseudoforge/ida/llm_config_dialog.py`, and model-discovery exceptions fall back to static model lists without saving corrupt config
 
 6. Tests
-   - `tests/test_core_engine.py`
    - `tests/test_ida_plugin_safety.py`
    - `tests/test_render_callbacks.py`
    - `tests/test_render_call_args.py`
@@ -207,6 +206,7 @@ Implemented in this folder:
    - `tests/test_rule_pack_validator.py`
    - `tests/test_rule_context.py`
    - `tests/test_ui_preview.py`
+   - `tests/test_plan_builder.py`
    - `tests/test_profile_loader.py`
    - `tests/test_export_bundle.py`
    - `tests/test_ida_batch.py`
@@ -258,8 +258,7 @@ P1 renderer snapshot protection update:
   `NtCurrentProcess()` / `NtCurrentThread()`, and Zw status success checks now
   lives in `ida_pseudoforge/core/render_zw.py`.
 - Zw API probe, reused Zw status-slot, and `MmGetSystemRoutineAddress`
-  indirect-call regressions now live in `tests/test_render_zw.py`; the core
-  monolith is 57 lines after the shared NtSet fixture and plan-builder splits.
+  indirect-call regressions now live in `tests/test_render_zw.py`.
 - TraceLogging template switch false-positive regression now lives in
   `tests/test_render_flow.py`.
 - Known `PVOID` native signature/body-alias regression now lives in
@@ -272,8 +271,8 @@ P1 renderer snapshot protection update:
 - Success-accounting label-tail classification regression now lives in
   `tests/test_render_labels.py`.
 - Shared NtSet system-information sample coverage now uses
-  `tests/fixtures/ntset_samples.py` instead of importing from
-  `tests/test_core_engine.py`.
+  `tests/fixtures/ntset_samples.py` instead of importing from the deleted core
+  monolith.
 - Snapshot-shared DriverEntry, IOCTL dispatch, and single-line style samples
   now use `tests/fixtures/snapshot_samples.py` instead of importing from
   renderer test modules.
@@ -287,6 +286,9 @@ P1 renderer snapshot protection update:
   `tests/test_llm_rename_filters.py`.
 - Plan-builder semantic recovery and shadowed duplicate-target warning
   regressions now live in `tests/test_plan_builder.py`.
+- The final broad render smoke coverage moved into `tests/test_render_ntset.py`
+  and `tests/test_render_flow.py`; `tests/test_core_engine.py` has been
+  removed.
 - `NtSetSystemInformation` m128/body rendering for typed `systemInformation`
   access, mutable alias splitting, and `userProbeEnd` recovery now lives in
   `ida_pseudoforge/core/render_ntset.py`.
@@ -425,9 +427,7 @@ P2 switch body reporting update:
 - Native switch recovery now handles `switch (...) {` brace placement on the
   switch line and has regression coverage for fallthrough cases plus nested
   switch cases that must not be promoted to the parent dispatcher.
-- Flow and switch-outline regressions now live in `tests/test_render_flow.py`
-  instead of adding more cases to the historical `test_core_engine.py`
-  monolith.
+- Flow and switch-outline regressions now live in `tests/test_render_flow.py`.
 - No-PDB DriverEntry, DriverEntry wrapper, device-extension, and offset-guard
   regressions now live in `tests/test_render_driver_entry.py`.
 - Memory Manager probe regressions now live in `tests/test_render_memory.py`.
@@ -1061,7 +1061,8 @@ implemented:
 - New focused tests were added for kernel API profile building and LLM CLI provider execution.
 
 deferred:
-- The historical test_core_engine.py monolith still contains existing broad regression coverage, though renderer-specific tests are being moved into domain suites incrementally.
+- The historical test_core_engine.py monolith has been removed; broad coverage
+  now lives in focused domain suites.
 - render.py, ida/actions.py, and ida/ui_preview.py remain candidates for later scoped extraction; they were not broadly rewritten in this pass to avoid behavior drift.
 ```
 
