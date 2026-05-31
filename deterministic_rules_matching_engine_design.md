@@ -209,6 +209,11 @@ class RuleContext:
 argument spans, and zero-based line index. Malformed calls keep a partial fact
 with empty arguments rather than failing context construction.
 
+`AssignmentFact` records the assignment target, RHS expression, full assignment
+span, RHS identifiers, numeric literal values, and pure RHS call
+name/arguments. Expressions such as `Call(x) + 1` keep identifier and literal
+facts but do not report a pure RHS call.
+
 The first implementation can use regex-based fact extraction. Ctree-identity based facts can be added later.
 
 ## Rule Phases
@@ -420,7 +425,10 @@ Operator behavior:
 - `regex`: runs against normalized text and can expose named bindings.
 - `assignment_regex`: runs against normalized text and is intended for assignment-style binding extraction.
 
-The initial implementation does not build a nested expression parser. Where call argument parsing already exists, future rule phases should reuse existing helpers such as `_split_arguments()`.
+The initial implementation does not build a nested expression parser. Where
+call argument parsing is needed, rule phases should reuse the shared
+parenthesis matching and parameter splitting helpers from
+`ida_pseudoforge.core.normalize`.
 
 ## Conflict Resolution
 

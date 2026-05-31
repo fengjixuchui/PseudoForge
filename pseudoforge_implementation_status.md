@@ -175,7 +175,7 @@ Implemented in this folder:
    - `tests/test_pseudoforge_free_cli.py`
    - `tests/test_release_pseudoforge.py`
    - renderer golden snapshots under `tests/snapshots`
-   - current suite covers 201 unit tests
+   - current suite covers 202 unit tests
 
 ## Latest Implementation Notes
 
@@ -242,6 +242,10 @@ P2 RuleContext call-site facts update:
 - Call-site argument parsing reuses shared parenthesis matching and parameter
   splitting helpers, including nested calls and comma-containing strings.
 - Malformed call text keeps a partial call-site fact without raising.
+- `RuleContext.assignments` now records RHS identifiers, numeric literals, and
+  pure RHS call names/arguments for assignment dataflow gates.
+- Non-call RHS expressions keep call details empty while preserving identifier
+  and literal facts.
 
 P0 rename identity hardening update:
 

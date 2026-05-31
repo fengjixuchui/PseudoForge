@@ -3,7 +3,11 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 
-from ida_pseudoforge.core.normalize import find_matching_paren, split_parameters_with_spans
+from ida_pseudoforge.core.normalize import (
+    extract_identifiers,
+    find_matching_paren,
+    split_parameters_with_spans,
+)
 from ida_pseudoforge.core.plan_schema import FunctionCapture
 
 
@@ -12,6 +16,10 @@ class AssignmentFact:
     target: str
     expression: str
     span: tuple[int, int]
+    rhs_identifiers: list[str] = field(default_factory=list)
+    rhs_literals: list[str] = field(default_factory=list)
+    rhs_call_name: str = ""
+    rhs_call_arguments: list[str] = field(default_factory=list)
 
 
 @dataclass(slots=True)
@@ -72,14 +80,23 @@ def build_rule_context(capture: FunctionCapture, text: str | None = None) -> Rul
 
 
 def _assignment_facts(text: str) -> list[AssignmentFact]:
-    return [
-        AssignmentFact(
-            target=match.group("target"),
-            expression=match.group("expr").strip(),
-            span=match.span(),
+    result = []
+    for match in _ASSIGNMENT_RE.finditer(text):
+        expression = match.group("expr").strip()
+        fact_text = _mask_quoted_text(expression)
+        rhs_call_name, rhs_call_arguments = _rhs_call_expression(expression)
+        result.append(
+            AssignmentFact(
+                target=match.group("target"),
+                expression=expression,
+                span=match.span(),
+                rhs_identifiers=sorted(extract_identifiers(fact_text)),
+                rhs_literals=_literal_values(fact_text),
+                rhs_call_name=rhs_call_name,
+                rhs_call_arguments=rhs_call_arguments,
+            )
         )
-        for match in _ASSIGNMENT_RE.finditer(text)
-    ]
+    return result
 
 
 def _call_site_facts(text: str) -> list[CallSiteFact]:
@@ -114,3 +131,67 @@ def _label_facts(text: str) -> list[LabelFact]:
 
 def _literal_facts(text: str) -> list[LiteralFact]:
     return [LiteralFact(value=match.group(0), span=match.span()) for match in _LITERAL_RE.finditer(text)]
+
+
+def _literal_values(text: str) -> list[str]:
+    return [match.group(0) for match in _LITERAL_RE.finditer(text)]
+
+
+def _mask_quoted_text(text: str) -> str:
+    result = []
+    quote = ""
+    escape = False
+    index = 0
+    while index < len(text):
+        char = text[index]
+        if quote:
+            result.append(" ")
+            if escape:
+                escape = False
+            elif char == "\\":
+                escape = True
+            elif char == quote:
+                quote = ""
+            index += 1
+            continue
+        prefix_length = _quoted_prefix_length(text, index)
+        if prefix_length:
+            quote = text[index + prefix_length]
+            result.extend([" "] * (prefix_length + 1))
+            index += prefix_length + 1
+            escape = False
+            continue
+        if char in "\"'":
+            quote = char
+            result.append(" ")
+            index += 1
+            continue
+        result.append(char)
+        index += 1
+    return "".join(result)
+
+
+def _quoted_prefix_length(text: str, index: int) -> int:
+    for prefix in ("u8", "L", "u", "U", "R"):
+        quote_index = index + len(prefix)
+        if text.startswith(prefix, index) and quote_index < len(text) and text[quote_index] in "\"'":
+            return len(prefix)
+    return 0
+
+
+def _rhs_call_expression(expression: str) -> tuple[str, list[str]]:
+    candidate = expression.strip()
+    match = _CALL_RE.match(candidate)
+    if match is None:
+        return ("", [])
+    open_index = match.end() - 1
+    close_index = find_matching_paren(candidate, open_index)
+    if close_index < 0:
+        return ("", [])
+    if candidate[close_index + 1:].strip():
+        return ("", [])
+    argument_text = candidate[open_index + 1:close_index]
+    return (
+        match.group("name"),
+        [item for item, _span in split_parameters_with_spans(argument_text)],
+    )

@@ -1808,6 +1808,53 @@ __int64 __fastcall RuleContextCallSample(void *inputBuffer)
         self.assertEqual([], broken.arguments)
         self.assertEqual([], broken.argument_spans)
 
+    def test_rule_context_assignment_facts_include_rhs_details(self):
+        capture = capture_from_pseudocode(
+            """
+__int64 __fastcall RuleContextAssignmentSample(void *inputBuffer)
+{
+  int status;
+  int flags;
+  int mixed;
+  const wchar_t *wide;
+
+  status = ProbeForRead(inputBuffer, sizeof("a123,b456"), 1);
+  flags = status | 0x10;
+  mixed = ProbeForRead(inputBuffer, 8, 1) + 1;
+  wide = L"unused789";
+  return status + flags + mixed;
+}
+"""
+        )
+
+        context = build_rule_context(capture)
+        assignments = {item.target: item for item in context.assignments}
+
+        status = assignments["status"]
+        self.assertEqual("ProbeForRead(inputBuffer, sizeof(\"a123,b456\"), 1)", status.expression)
+        self.assertEqual("ProbeForRead", status.rhs_call_name)
+        self.assertEqual(["inputBuffer", 'sizeof("a123,b456")', "1"], status.rhs_call_arguments)
+        self.assertIn("ProbeForRead", status.rhs_identifiers)
+        self.assertIn("inputBuffer", status.rhs_identifiers)
+        self.assertNotIn("a123", status.rhs_identifiers)
+        self.assertNotIn("b456", status.rhs_identifiers)
+        self.assertEqual(["1"], status.rhs_literals)
+
+        flags = assignments["flags"]
+        self.assertEqual("", flags.rhs_call_name)
+        self.assertEqual([], flags.rhs_call_arguments)
+        self.assertIn("status", flags.rhs_identifiers)
+        self.assertEqual(["0x10"], flags.rhs_literals)
+
+        mixed = assignments["mixed"]
+        self.assertEqual("", mixed.rhs_call_name)
+        self.assertEqual([], mixed.rhs_call_arguments)
+        self.assertEqual(["8", "1", "1"], mixed.rhs_literals)
+
+        wide = assignments["wide"]
+        self.assertEqual([], wide.rhs_identifiers)
+        self.assertEqual([], wide.rhs_literals)
+
     def test_rule_engine_assignment_regex_binding_and_scope_gate(self):
         capture = capture_from_pseudocode(
             """

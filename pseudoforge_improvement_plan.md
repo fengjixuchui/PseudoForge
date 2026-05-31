@@ -459,18 +459,19 @@ Completed:
   nested calls and comma-containing strings.
 - [x] Added coverage for nested call arguments, string commas, absolute spans,
   and malformed call text fallback.
+- [x] Added typed assignment facts for RHS identifiers, numeric literals, and
+  pure RHS call expressions.
 
 Remaining:
 
-- [ ] Add typed assignment facts for RHS identifiers, literals, and call
-  expressions.
 - [ ] Add lvar type facts from `FunctionCapture.lvars`.
 - [ ] Add profile facts for known functions and enums.
 - [ ] Add rule match gates for argument count and literal argument values.
 
 ### Current Evidence
 
-- `RuleContext` now indexes regex facts plus call-site argument facts.
+- `RuleContext` now indexes regex facts plus call-site and assignment dataflow
+  facts.
 - Existing render and kernel rewrite code already contains argument splitting,
   call-argument parsing, literal parsing, and helper-specific heuristics.
 
