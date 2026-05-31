@@ -679,6 +679,9 @@ Completed:
   `tests/test_render_driver_entry.py`.
 - [x] Moved DriverEntry device-extension and DWORD-scaled offset-guard
   regressions into `tests/test_render_driver_entry.py`.
+- [x] Moved Memory Manager probe regressions for `MmGetSystemRoutineAddress`,
+  `MmCopyMemory`, MDL, noncached memory, and contiguous memory cleanup into
+  `tests/test_render_memory.py`.
 - [x] Moved status literal rendering regressions into
   `tests/test_render_status.py`.
 - [x] Moved NTSTATUS profile lookup and status-code generator regressions into
@@ -728,10 +731,10 @@ Remaining:
 
 ### Current Evidence
 
-- `tests/test_core_engine.py` is 1526 lines after the focused forge-store,
+- `tests/test_core_engine.py` is 1411 lines after the focused forge-store,
   UI preview, RuleContext, rule-pack validator, RuleEngine, rule integration,
-  IDA batch, LLM config, kernel profile, DriverEntry, IOCTL/IRP, callback, and
-  Zw/API splits.
+  IDA batch, LLM config, kernel profile, DriverEntry, Memory Manager,
+  IOCTL/IRP, callback, and Zw/API splits.
 - Status literal rendering coverage now has a focused
   `tests/test_render_status.py` suite.
 - Dispatcher/profile literal coverage now has a focused
@@ -751,6 +754,7 @@ Remaining:
   `tests/test_rule_integration.py` suite.
 - DriverEntry no-PDB, wrapper, device-extension, and offset-guard coverage now
   lives in `tests/test_render_driver_entry.py`.
+- Memory Manager probe coverage now lives in `tests/test_render_memory.py`.
 - IDA batch summary, optional-LLM fallback, compare artifact, and safe file-stem
   coverage now has a focused `tests/test_ida_batch.py` suite.
 - LLM config, provider registry, response parsing, CLI stdout, and
