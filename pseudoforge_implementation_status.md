@@ -186,6 +186,7 @@ Implemented in this folder:
    - `tests/test_render_callbacks.py`
    - `tests/test_render_call_args.py`
    - `tests/test_render_dispatcher.py`
+   - `tests/test_forge_store.py`
    - `tests/test_render_driver_entry.py`
    - `tests/test_render_flow.py`
    - `tests/test_render_header.py`
@@ -204,7 +205,7 @@ Implemented in this folder:
    - `tests/test_pseudoforge_free_cli.py`
    - `tests/test_release_pseudoforge.py`
    - renderer golden snapshots under `tests/snapshots`
-   - current suite covers 256 unit tests
+   - current suite covers 265 unit tests
 
 ## Latest Implementation Notes
 
@@ -388,6 +389,8 @@ P2 switch body reporting update:
   `tests/test_render_dispatcher.py`.
 - Generated style and positive-guard inversion regressions now live in
   `tests/test_render_style.py`.
+- Forge-store aggregate/upsert, section lookup, save filename, and
+  current-section preview regressions now live in `tests/test_forge_store.py`.
 
 P0 rename identity hardening update:
 

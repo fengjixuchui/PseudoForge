@@ -686,6 +686,8 @@ Completed:
   `tests/test_render_dispatcher.py`.
 - [x] Moved generated style and positive-guard inversion rendering regressions
   into `tests/test_render_style.py`.
+- [x] Moved forge-store aggregate/upsert, section lookup, save filename, and
+  current-section preview regressions into `tests/test_forge_store.py`.
 
 Remaining:
 
@@ -696,11 +698,14 @@ Remaining:
 
 ### Current Evidence
 
-- `tests/test_core_engine.py` is about 5600 lines.
+- `tests/test_core_engine.py` is about 5350 lines after the focused forge-store
+  split.
 - Status literal rendering coverage now has a focused
   `tests/test_render_status.py` suite.
 - Dispatcher/profile literal coverage now has a focused
   `tests/test_render_dispatcher.py` suite.
+- Forge-store aggregate/upsert and current-section preview coverage now has a
+  focused `tests/test_forge_store.py` suite.
 - The status document already lists the historical monolith as deferred debt.
 - Test coverage is broad but organized mostly by accumulation rather than by
   subsystem.
