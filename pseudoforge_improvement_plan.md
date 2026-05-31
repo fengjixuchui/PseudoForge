@@ -701,6 +701,8 @@ Completed:
   builtin call-argument rewrites, project rule loading, source-path rule
   discovery, duplicate rule-dir dedupe, source spoofing, and semantic-comment
   dedupe into `tests/test_rule_integration.py`.
+- [x] Moved IDA batch report summary, optional-LLM fallback, compare artifact,
+  and Windows-safe file-stem regressions into `tests/test_ida_batch.py`.
 
 Remaining:
 
@@ -711,9 +713,9 @@ Remaining:
 
 ### Current Evidence
 
-- `tests/test_core_engine.py` is about 4150 lines after the focused forge-store,
+- `tests/test_core_engine.py` is about 4030 lines after the focused forge-store,
   UI preview, RuleContext, rule-pack validator, RuleEngine, and rule
-  integration splits.
+  integration, and IDA batch splits.
 - Status literal rendering coverage now has a focused
   `tests/test_render_status.py` suite.
 - Dispatcher/profile literal coverage now has a focused
@@ -731,6 +733,8 @@ Remaining:
   focused `tests/test_rule_engine.py` suite.
 - Deterministic rule integration coverage now has a focused
   `tests/test_rule_integration.py` suite.
+- IDA batch summary, optional-LLM fallback, compare artifact, and safe file-stem
+  coverage now has a focused `tests/test_ida_batch.py` suite.
 - The status document already lists the historical monolith as deferred debt.
 - Test coverage is broad but organized mostly by accumulation rather than by
   subsystem.

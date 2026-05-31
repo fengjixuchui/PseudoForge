@@ -207,6 +207,7 @@ Implemented in this folder:
    - `tests/test_ui_preview.py`
    - `tests/test_profile_loader.py`
    - `tests/test_export_bundle.py`
+   - `tests/test_ida_batch.py`
    - `tests/test_pseudoforge_free_cli.py`
    - `tests/test_release_pseudoforge.py`
    - renderer golden snapshots under `tests/snapshots`
@@ -409,6 +410,8 @@ P2 switch body reporting update:
   call-argument rewrites, project rule loading, source-path discovery,
   duplicate rule-dir dedupe, source spoofing, and semantic-comment dedupe now
   live in `tests/test_rule_integration.py`.
+- IDA batch report summary, optional-LLM fallback, compare artifact, and
+  Windows-safe file-stem regressions now live in `tests/test_ida_batch.py`.
 
 P0 rename identity hardening update:
 
