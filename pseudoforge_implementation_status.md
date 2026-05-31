@@ -396,6 +396,8 @@ P2 switch body reporting update:
   regressions now live in `tests/test_render_driver_entry.py`.
 - Memory Manager probe regressions now live in `tests/test_render_memory.py`.
 - Bounded logging rotation regression now lives in `tests/test_logging.py`.
+- Plugin version/manifest parity regression now lives in
+  `tests/test_release_pseudoforge.py`.
 - Status literal rendering regressions now live in `tests/test_render_status.py`.
 - NTSTATUS profile lookup and generator regressions now live in
   `tests/test_render_status.py`.
@@ -869,6 +871,15 @@ Logging test-suite split validation:
 
 ```text
 python -B -m unittest tests.test_logging tests.test_core_engine -v: 32 tests OK
+python -B -m unittest discover -s tests -v: 265 tests OK
+python -B -m compileall .\pseudoforge.py .\ida_pseudoforge .\tests .\tools: passed
+git diff --check -- .: passed
+```
+
+Release/version test-suite split validation:
+
+```text
+python -B -m unittest tests.test_release_pseudoforge tests.test_core_engine -v: 36 tests OK
 python -B -m unittest discover -s tests -v: 265 tests OK
 python -B -m compileall .\pseudoforge.py .\ida_pseudoforge .\tests .\tools: passed
 git diff --check -- .: passed

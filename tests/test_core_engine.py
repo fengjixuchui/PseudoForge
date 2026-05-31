@@ -3,7 +3,6 @@ import json
 import re
 from pathlib import Path
 
-import ida_pseudoforge
 from ida_pseudoforge.core.forge_store import (
     render_forge_function_section,
 )
@@ -17,7 +16,7 @@ from ida_pseudoforge.core.render import (
 )
 from ida_pseudoforge.ida.decompiler import merge_lvars_from_text_and_cfunc
 from ida_pseudoforge.ida import actions as actions_module
-from ida_pseudoforge.version import PLUGIN_NAME, VERSION, plugin_title
+from ida_pseudoforge.version import VERSION
 
 SAMPLE = r"""
 __int64 __fastcall NtSetSystemInformation(char *a1, __m128i *a2, __int64 a3)
@@ -471,15 +470,6 @@ LABEL_41:
 
 
 class CoreEngineTests(unittest.TestCase):
-    def test_plugin_version_matches_manifest(self):
-        manifest_path = Path(__file__).resolve().parents[1] / "ida-plugin.json"
-        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-
-        self.assertEqual(VERSION, manifest["plugin"]["version"])
-        self.assertEqual(VERSION, ida_pseudoforge.__version__)
-        self.assertEqual("PseudoForge", PLUGIN_NAME)
-        self.assertEqual("PseudoForge %s" % VERSION, plugin_title())
-
     def test_build_clean_plan(self):
         capture = capture_from_pseudocode(SAMPLE)
         plan = build_clean_plan(capture)

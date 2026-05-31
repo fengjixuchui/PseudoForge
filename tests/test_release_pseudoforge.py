@@ -4,10 +4,21 @@ import unittest
 import zipfile
 from pathlib import Path
 
+import ida_pseudoforge
+from ida_pseudoforge.version import PLUGIN_NAME, VERSION, plugin_title
 from tools import release_pseudoforge
 
 
 class ReleasePseudoForgeTests(unittest.TestCase):
+    def test_plugin_version_matches_manifest(self):
+        manifest_path = Path(__file__).resolve().parents[1] / "ida-plugin.json"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+
+        self.assertEqual(VERSION, manifest["plugin"]["version"])
+        self.assertEqual(VERSION, ida_pseudoforge.__version__)
+        self.assertEqual("PseudoForge", PLUGIN_NAME)
+        self.assertEqual("PseudoForge %s" % VERSION, plugin_title())
+
     def test_bump_version(self):
         self.assertEqual("1.2.4", release_pseudoforge.bump_version("1.2.3", "patch"))
         self.assertEqual("1.3.0", release_pseudoforge.bump_version("1.2.3", "minor"))

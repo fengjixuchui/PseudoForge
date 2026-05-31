@@ -683,6 +683,8 @@ Completed:
   `MmCopyMemory`, MDL, noncached memory, and contiguous memory cleanup into
   `tests/test_render_memory.py`.
 - [x] Moved bounded logging rotation regression into `tests/test_logging.py`.
+- [x] Moved plugin version/manifest parity regression into
+  `tests/test_release_pseudoforge.py`.
 - [x] Moved status literal rendering regressions into
   `tests/test_render_status.py`.
 - [x] Moved NTSTATUS profile lookup and status-code generator regressions into
@@ -732,9 +734,9 @@ Remaining:
 
 ### Current Evidence
 
-- `tests/test_core_engine.py` is 1395 lines after the focused forge-store,
+- `tests/test_core_engine.py` is 1387 lines after the focused forge-store,
   UI preview, RuleContext, rule-pack validator, RuleEngine, rule integration,
-  IDA batch, LLM config, logging, kernel profile, DriverEntry,
+  IDA batch, LLM config, logging, release/version, kernel profile, DriverEntry,
   Memory Manager, IOCTL/IRP, callback, and Zw/API splits.
 - Status literal rendering coverage now has a focused
   `tests/test_render_status.py` suite.
@@ -757,6 +759,8 @@ Remaining:
   lives in `tests/test_render_driver_entry.py`.
 - Memory Manager probe coverage now lives in `tests/test_render_memory.py`.
 - Bounded logging rotation coverage now lives in `tests/test_logging.py`.
+- Plugin version/manifest parity coverage now lives in
+  `tests/test_release_pseudoforge.py`.
 - IDA batch summary, optional-LLM fallback, compare artifact, and safe file-stem
   coverage now has a focused `tests/test_ida_batch.py` suite.
 - LLM config, provider registry, response parsing, CLI stdout, and
