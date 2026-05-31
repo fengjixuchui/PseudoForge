@@ -690,6 +690,8 @@ Completed:
   current-section preview regressions into `tests/test_forge_store.py`.
 - [x] Moved preview syntax highlighting regressions into
   `tests/test_ui_preview.py`.
+- [x] Moved RuleContext call-site, assignment, local-variable identity, and
+  profile-function fact regressions into `tests/test_rule_context.py`.
 
 Remaining:
 
@@ -700,8 +702,8 @@ Remaining:
 
 ### Current Evidence
 
-- `tests/test_core_engine.py` is about 5280 lines after the focused forge-store
-  and UI preview splits.
+- `tests/test_core_engine.py` is about 5130 lines after the focused forge-store,
+  UI preview, and RuleContext splits.
 - Status literal rendering coverage now has a focused
   `tests/test_render_status.py` suite.
 - Dispatcher/profile literal coverage now has a focused
@@ -710,6 +712,8 @@ Remaining:
   focused `tests/test_forge_store.py` suite.
 - Preview syntax highlighting coverage now has a focused
   `tests/test_ui_preview.py` suite.
+- RuleContext fact coverage now has a focused `tests/test_rule_context.py`
+  suite.
 - The status document already lists the historical monolith as deferred debt.
 - Test coverage is broad but organized mostly by accumulation rather than by
   subsystem.

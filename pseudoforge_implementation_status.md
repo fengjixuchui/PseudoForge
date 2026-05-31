@@ -200,6 +200,7 @@ Implemented in this folder:
    - `tests/test_render_style.py`
    - `tests/test_render_warnings.py`
    - `tests/test_render_zw.py`
+   - `tests/test_rule_context.py`
    - `tests/test_ui_preview.py`
    - `tests/test_profile_loader.py`
    - `tests/test_export_bundle.py`
@@ -394,6 +395,8 @@ P2 switch body reporting update:
   current-section preview regressions now live in `tests/test_forge_store.py`.
 - Preview syntax highlighting regressions now live in
   `tests/test_ui_preview.py`.
+- RuleContext call-site, assignment, local-variable identity, and
+  profile-function fact regressions now live in `tests/test_rule_context.py`.
 
 P0 rename identity hardening update:
 
