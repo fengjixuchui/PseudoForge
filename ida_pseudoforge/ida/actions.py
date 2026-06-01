@@ -1012,6 +1012,7 @@ def _build_plan_with_config(capture: FunctionCapture, task_name: str = "") -> Cl
     except CancellationRequested:
         raise
     except Exception as exc:
+        failure_summary = _summarize_llm_failure(exc)
         log_event(
             "llm.failed provider=%s model=\"%s\" function=\"%s\" error=\"%s\""
             % (
@@ -1021,7 +1022,10 @@ def _build_plan_with_config(capture: FunctionCapture, task_name: str = "") -> Cl
                 _ascii_for_log(str(exc)),
             )
         )
-        log_output("PseudoForge LLM rename assist failed; deterministic fallback will be used.")
+        log_output(
+            "PseudoForge LLM rename assist failed; deterministic fallback will be used. Reason: %s"
+            % failure_summary
+        )
         with trace_scope("build_plan.fallback", function=capture.name, ea="0x%X" % capture.ea):
             plan = build_clean_plan(capture)
         _raise_if_task_cancelled(task_name, "after fallback plan")
@@ -1070,6 +1074,15 @@ def _format_warning(item: object) -> str:
         if old and reason:
             return "Potential bad call target %s: %s" % (old, reason)
     return str(item)
+
+
+def _summarize_llm_failure(error: object) -> str:
+    text = " ".join(str(error or "").split())
+    if not text:
+        return "unknown error"
+    if len(text) > 220:
+        text = text[:217].rstrip() + "..."
+    return _ascii_for_log(text)
 
 
 def _raise_if_task_cancelled(task_name: str, phase: str) -> None:

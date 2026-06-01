@@ -30,6 +30,10 @@ _OLD_CODEX_COMMAND_TEMPLATES = {
 _OLD_CLAUDE_COMMAND_TEMPLATES = {
     "claude -p --permission-mode dontAsk --output-format text",
     "claude -p --model {model} --permission-mode dontAsk --output-format text",
+    (
+        "claude -p --model {model} --permission-mode dontAsk --output-format text "
+        "--no-session-persistence --tools \"\""
+    ),
 }
 PREVIEW_BACKEND_SIMPLE = "simple"
 PREVIEW_BACKEND_SIDE_BY_SIDE = "side_by_side"

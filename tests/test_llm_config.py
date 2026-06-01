@@ -349,6 +349,7 @@ class LlmConfigTests(unittest.TestCase):
 
             self.assertIn("--no-session-persistence", command_template)
             self.assertIn('--tools ""', command_template)
+            self.assertIn("--setting-sources project,local", command_template)
 
     def test_old_codex_command_template_is_migrated(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -448,6 +449,40 @@ class LlmConfigTests(unittest.TestCase):
                 self.assertIn("{model}", loaded.llm.command_template)
                 self.assertIn("--no-session-persistence", loaded.llm.command_template)
                 self.assertIn('--tools ""', loaded.llm.command_template)
+                self.assertIn("--setting-sources project,local", loaded.llm.command_template)
+            finally:
+                if old_config_dir is None:
+                    os.environ.pop("PSEUDOFORGE_CONFIG_DIR", None)
+                else:
+                    os.environ["PSEUDOFORGE_CONFIG_DIR"] = old_config_dir
+
+    def test_claude_command_template_without_setting_sources_is_migrated(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            old_config_dir = os.environ.get("PSEUDOFORGE_CONFIG_DIR")
+            os.environ["PSEUDOFORGE_CONFIG_DIR"] = temp_dir
+            try:
+                config_path = os.path.join(temp_dir, "pseudoforge_config.json")
+                with open(config_path, "w", encoding="utf-8") as file:
+                    json.dump(
+                        {
+                            "llm": {
+                                "enabled": True,
+                                "provider": PROVIDER_CLAUDE_LOGIN_VIA_CLAUDE_CLI,
+                                "model": "claude-opus-4-8",
+                                "command_template": (
+                                    "claude -p --model {model} --permission-mode dontAsk "
+                                    "--output-format text --no-session-persistence --tools \"\""
+                                ),
+                            },
+                            "credentials": {},
+                        },
+                        file,
+                    )
+
+                loaded = load_config()
+
+                self.assertEqual(loaded.llm.model, "claude-opus-4-8")
+                self.assertIn("--setting-sources project,local", loaded.llm.command_template)
             finally:
                 if old_config_dir is None:
                     os.environ.pop("PSEUDOFORGE_CONFIG_DIR", None)

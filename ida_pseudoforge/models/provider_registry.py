@@ -79,14 +79,14 @@ _DEFAULTS = {
         model="claude-sonnet-4-6",
         command_template=(
             "claude -p --model {model} --permission-mode dontAsk --output-format text "
-            "--no-session-persistence --tools \"\""
+            "--no-session-persistence --tools \"\" --setting-sources project,local"
         ),
     ),
     PROVIDER_CLAUDE_CLI: ProviderDefaults(
         model="claude-sonnet-4-6",
         command_template=(
             "claude -p --model {model} --permission-mode dontAsk --output-format text "
-            "--no-session-persistence --tools \"\""
+            "--no-session-persistence --tools \"\" --setting-sources project,local"
         ),
     ),
     PROVIDER_DEEPSEEK: ProviderDefaults(

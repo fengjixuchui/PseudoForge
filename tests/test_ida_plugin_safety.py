@@ -279,6 +279,15 @@ class IdaPluginSafetyTests(unittest.TestCase):
         self.assertNotIn("behaves like memset", rendered)
         self.assertIn("memset(localBuffer, 0, sizeof(localBuffer));", rendered)
 
+    def test_llm_failure_summary_is_short_and_ascii_safe(self):
+        summary = actions_module._summarize_llm_failure(
+            RuntimeError("You've hit your session limit \u00b7 resets 2:20am (Asia/Seoul)" + " x" * 200)
+        )
+
+        self.assertLessEqual(len(summary), 220)
+        self.assertIn("session limit", summary)
+        self.assertNotIn("\u00b7", summary)
+
     def test_plugin_analysis_session_normalizes_windows_path_identity(self):
         capture = _capture()
         plan = _plan(capture)
