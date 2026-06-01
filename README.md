@@ -458,6 +458,10 @@ Ctrl+Alt+Shift+V  Configure preview mode
 
 `Configure preview mode` stores the preferred preview backend in `<IDA user directory>\pseudoforge_config.json`.
 
+If the custom submenu is hidden by an IDA layout/plugin-menu issue, run
+`Edit/Plugins/PseudoForge` or press `Ctrl+Alt+Shift+V`; both open the preview
+mode configuration fallback.
+
 `Show settings` displays the current plugin version, config path, profile status, preview mode, and LLM status. API keys are masked.
 
 ### Preview Behavior

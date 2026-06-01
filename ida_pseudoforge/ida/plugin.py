@@ -23,7 +23,7 @@ from ida_pseudoforge.ida.actions import (
 )
 from ida_pseudoforge.ida.action_registry import ActionRegistry
 from ida_pseudoforge.ida.ui_preview import cleanup_preview_actions
-from ida_pseudoforge.logging import start_output_logger, stop_output_logger
+from ida_pseudoforge.logging import log_event, start_output_logger, stop_output_logger
 from ida_pseudoforge.version import plugin_title
 
 
@@ -58,6 +58,7 @@ class PseudoForgePlugin(idaapi.plugin_t if idaapi else object):
 
         self._actions = ActionRegistry(idaapi)
         self._unregister_legacy_actions()
+        self._create_static_menus()
 
         self._actions.register(
             self.analyze_action_name,
@@ -182,7 +183,39 @@ class PseudoForgePlugin(idaapi.plugin_t if idaapi else object):
             except Exception:
                 pass
 
+    def _create_static_menus(self) -> None:
+        create_menu = getattr(ida_kernwin, "create_menu", None) or getattr(idaapi, "create_menu", None)
+        if create_menu is None:
+            log_event("menu.create.unavailable")
+            return
+
+        for name, label, menu_path in (
+            ("pseudoforge_menu", "PseudoForge", "Edit/"),
+            ("pseudoforge_advanced_menu", "Advanced", "Edit/PseudoForge/"),
+        ):
+            try:
+                ok = bool(create_menu(name, label, menu_path))
+            except Exception as exc:
+                log_event(
+                    "menu.create.failed name=%s path=\"%s\" error=\"%s\""
+                    % (name, _ascii_for_log(menu_path), _ascii_for_log(str(exc)))
+                )
+                continue
+            log_event(
+                "menu.create name=%s path=\"%s\" ok=%d"
+                % (name, _ascii_for_log(menu_path), int(ok))
+            )
+
     def run(self, arg):
+        try:
+            return ConfigurePreviewModeHandler().activate(None)
+        except Exception as exc:
+            log_event("plugin.run.configure_preview.failed error=\"%s\"" % _ascii_for_log(str(exc)))
+            if ida_kernwin is not None:
+                try:
+                    ida_kernwin.warning("PseudoForge preview mode configuration failed: %s" % exc)
+                except Exception:
+                    pass
         return None
 
     def term(self):
@@ -277,3 +310,7 @@ class ContextMenuHooks(idaapi.UI_Hooks if idaapi else object):
                 "PseudoForge/",
             )
         return 0
+
+
+def _ascii_for_log(message: str) -> str:
+    return message.encode("ascii", errors="replace").decode("ascii")

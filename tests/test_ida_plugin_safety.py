@@ -113,7 +113,14 @@ class FakeHexraysPlugin:
 
 
 class FakeKernwinPlugin:
+    def __init__(self):
+        self.created_menus = []
+
     def is_idaq(self):
+        return True
+
+    def create_menu(self, name, label, menupath=None):
+        self.created_menus.append((name, label, menupath))
         return True
 
 
@@ -687,7 +694,8 @@ class IdaPluginSafetyTests(unittest.TestCase):
         old_stop = plugin_module.stop_output_logger
         old_hooks = plugin_module.ContextMenuHooks
         plugin_module.idaapi = fake_idaapi
-        plugin_module.ida_kernwin = FakeKernwinPlugin()
+        fake_kernwin = FakeKernwinPlugin()
+        plugin_module.ida_kernwin = fake_kernwin
         plugin_module.ida_hexrays = FakeHexraysPlugin()
         plugin_module.start_output_logger = lambda: None
         plugin_module.stop_output_logger = lambda: None
@@ -703,6 +711,8 @@ class IdaPluginSafetyTests(unittest.TestCase):
             self.assertIn(plugin_module.PseudoForgePlugin.configure_profile_action_name, fake_idaapi.registered)
             self.assertNotIn(plugin_module.PseudoForgePlugin.legacy_preview_action_name, fake_idaapi.registered)
             attached_menu_actions = [(path, action_name) for path, action_name, _flags in fake_idaapi.attached]
+            self.assertIn(("pseudoforge_menu", "PseudoForge", "Edit/"), fake_kernwin.created_menus)
+            self.assertIn(("pseudoforge_advanced_menu", "Advanced", "Edit/PseudoForge/"), fake_kernwin.created_menus)
             self.assertIn(("Edit/PseudoForge/", plugin_module.PseudoForgePlugin.analyze_action_name), attached_menu_actions)
             self.assertIn(("Edit/PseudoForge/", plugin_module.PseudoForgePlugin.preview_current_action_name), attached_menu_actions)
             self.assertIn(("Edit/PseudoForge/", plugin_module.PseudoForgePlugin.analyzed_functions_action_name), attached_menu_actions)
@@ -719,6 +729,23 @@ class IdaPluginSafetyTests(unittest.TestCase):
             plugin_module.start_output_logger = old_start
             plugin_module.stop_output_logger = old_stop
             plugin_module.ContextMenuHooks = old_hooks
+
+    def test_plugin_run_opens_preview_configuration_fallback(self):
+        old_handler = plugin_module.ConfigurePreviewModeHandler
+        activated = []
+
+        class FakeConfigurePreviewModeHandler:
+            def activate(self, ctx):
+                activated.append(ctx)
+                return 1
+
+        plugin_module.ConfigurePreviewModeHandler = FakeConfigurePreviewModeHandler
+        try:
+            self.assertEqual(plugin_module.PseudoForgePlugin().run(None), 1)
+        finally:
+            plugin_module.ConfigurePreviewModeHandler = old_handler
+
+        self.assertEqual(activated, [None])
 
     def test_preview_cleanup_unregisters_preview_actions(self):
         fake_idaapi = FakeIdaApi()

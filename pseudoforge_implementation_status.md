@@ -552,6 +552,9 @@ P2 IDA side-by-side preview update:
 
 - Analysis preview can try an experimental dockable raw-vs-cleaned review panel
   through the persisted `Edit/PseudoForge/Configure preview mode` setting.
+- The plugin explicitly creates the `Edit/PseudoForge` parent menu and the
+  `Advanced` child menu before attaching actions, and `Edit/Plugins/PseudoForge`
+  opens the preview mode configuration as a fallback.
 - `PSEUDOFORGE_PREVIEW_BACKEND` remains a temporary launch-time override for
   forcing `side_by_side` or `simple` during troubleshooting.
 - The dockable panel uses IDA `PluginForm` plus Qt widgets when available.
