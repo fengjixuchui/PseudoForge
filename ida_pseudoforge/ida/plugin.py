@@ -119,7 +119,7 @@ class PseudoForgePlugin(idaapi.plugin_t if idaapi else object):
             self.configure_preview_action_name,
             "Configure preview mode",
             ConfigurePreviewModeHandler(),
-            "",
+            "Ctrl+Alt+Shift+V",
             "Configure the PseudoForge preview mode",
         )
         self._actions.register(
@@ -131,43 +131,43 @@ class PseudoForgePlugin(idaapi.plugin_t if idaapi else object):
         )
 
         self._actions.attach_menu(
-            "Edit/PseudoForge/Analyze current function",
+            "Edit/PseudoForge/",
             self.analyze_action_name,
         )
         self._actions.attach_menu(
-            "Edit/PseudoForge/Show current analysis result",
+            "Edit/PseudoForge/",
             self.preview_current_action_name,
         )
         self._actions.attach_menu(
-            "Edit/PseudoForge/Analyzed functions...",
+            "Edit/PseudoForge/",
             self.analyzed_functions_action_name,
         )
         self._actions.attach_menu(
-            "Edit/PseudoForge/Export cleaned pseudocode",
+            "Edit/PseudoForge/",
             self.export_action_name,
         )
         self._actions.attach_menu(
-            "Edit/PseudoForge/Cancel current operation",
+            "Edit/PseudoForge/",
             self.cancel_action_name,
         )
         self._actions.attach_menu(
-            "Edit/PseudoForge/Advanced/Apply selected renames to IDB",
+            "Edit/PseudoForge/Advanced/",
             self.apply_renames_action_name,
         )
         self._actions.attach_menu(
-            "Edit/PseudoForge/Configure LLM rename assist",
+            "Edit/PseudoForge/",
             self.configure_llm_action_name,
         )
         self._actions.attach_menu(
-            "Edit/PseudoForge/Configure profile directory",
+            "Edit/PseudoForge/",
             self.configure_profile_action_name,
         )
         self._actions.attach_menu(
-            "Edit/PseudoForge/Configure preview mode",
+            "Edit/PseudoForge/",
             self.configure_preview_action_name,
         )
         self._actions.attach_menu(
-            "Edit/PseudoForge/Show settings",
+            "Edit/PseudoForge/",
             self.show_settings_action_name,
         )
 

@@ -691,6 +691,7 @@ Ctrl+Alt+F        Analyze current function
 Ctrl+Alt+P        Show current analysis result
 Ctrl+Alt+Shift+P  Analyzed functions...
 Ctrl+Alt+Shift+F  Export cleaned pseudocode
+Ctrl+Alt+Shift+V  Configure preview mode
 ```
 
 ## Exported Files
