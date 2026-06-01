@@ -67,6 +67,7 @@ def pattern_renames(capture: FunctionCapture) -> list[RenameSuggestion]:
             )
         )
     suggestions.extend(_saved_previous_mode_renames(capture))
+    suggestions.extend(_same_named_field_local_renames(capture))
     suggestions.extend(_cpu_set_mask_renames(text))
     suggestions.extend(_pool_allocation_renames(text))
     return suggestions
@@ -324,6 +325,52 @@ def _saved_previous_mode_renames(capture: FunctionCapture) -> list[RenameSuggest
                 )
             )
     return suggestions
+
+
+def _same_named_field_local_renames(capture: FunctionCapture) -> list[RenameSuggestion]:
+    local_names = {var.name for var in capture.lvars if var.name}
+    if not local_names:
+        return []
+
+    suggestions = []
+    existing_names = set(local_names)
+    for match in re.finditer(
+        r"\b(?P<dst>[A-Za-z_][A-Za-z0-9_]*)\s*=\s*[^;\n]*?(?:->|\.)\s*(?P=dst)\s*;",
+        capture.pseudocode,
+    ):
+        old_name = match.group("dst")
+        if old_name not in local_names:
+            continue
+        new_name = _lower_camel_from_pascal(old_name)
+        if not new_name or new_name == old_name or new_name in existing_names:
+            continue
+        suggestions.append(
+            RenameSuggestion(
+                kind="lvar",
+                old=old_name,
+                new=new_name,
+                confidence=0.84,
+                source="field-fallback",
+                evidence="local shadows a same-named structure field",
+            )
+        )
+    return suggestions
+
+
+def _lower_camel_from_pascal(name: str) -> str:
+    if not name or not re.match(r"^[A-Z][A-Za-z0-9_]*$", name):
+        return ""
+    if name.upper() == name:
+        return ""
+
+    prefix_len = 1
+    while prefix_len < len(name) and name[prefix_len].isupper():
+        next_index = prefix_len + 1
+        if next_index < len(name) and name[next_index].islower():
+            break
+        prefix_len += 1
+
+    return name[:prefix_len].lower() + name[prefix_len:]
 
 
 def _m128_pointer_alias_kind(capture: FunctionCapture, local_name: str, parameter_name: str) -> str:

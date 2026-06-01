@@ -96,6 +96,32 @@ __int64 __fastcall PreviousModeCopySample()
 """
 
 
+SAME_NAMED_FIELD_LOCAL_SAMPLE = r"""
+__int64 __fastcall SameNamedFieldLocalSample(struct _GENERIC_OBJECT *object)
+{
+  PVOID MappedSystemVa;
+  PVOID mappedSystemVaCandidate;
+
+  MappedSystemVa = object->MappedSystemVa;
+  mappedSystemVaCandidate = MappedSystemVa;
+  return (__int64)mappedSystemVaCandidate;
+}
+"""
+
+
+SAME_NAMED_FIELD_CONFLICT_SAMPLE = r"""
+__int64 __fastcall SameNamedFieldConflictSample(struct _GENERIC_OBJECT *object)
+{
+  PVOID MappedSystemVa;
+  PVOID mappedSystemVa;
+
+  MappedSystemVa = object->MappedSystemVa;
+  mappedSystemVa = MappedSystemVa;
+  return (__int64)mappedSystemVa;
+}
+"""
+
+
 class RenameHeuristicTests(unittest.TestCase):
     def test_identifier_renames_do_not_touch_struct_members(self) -> None:
         class FakeProvider:
@@ -234,6 +260,49 @@ __int64 __fastcall TextLvarMergeSample()
         self.assertEqual(rename_map["v119"], "savedPreviousMode")
         self.assertIn("savedPreviousMode = previousMode;", rendered)
         self.assertNotIn("capturedPreviousMode", rendered)
+
+    def test_same_named_field_local_gets_lower_camel_name(self) -> None:
+        capture = capture_from_pseudocode(SAME_NAMED_FIELD_LOCAL_SAMPLE)
+        plan = build_clean_plan(capture)
+        rename_map = {item.old: item.new for item in plan.renames if item.apply}
+        rendered = render_cleaned_pseudocode(capture, plan)
+
+        self.assertEqual(rename_map["MappedSystemVa"], "mappedSystemVa")
+        self.assertIn("PVOID mappedSystemVa;", rendered)
+        self.assertIn("mappedSystemVa = object->MappedSystemVa;", rendered)
+        self.assertIn("return (__int64)mappedSystemVa;", rendered)
+        self.assertNotIn("mappedSystemVaCandidate", rendered)
+        self.assertNotIn("object->mappedSystemVa", rendered)
+
+    def test_same_named_field_local_skips_existing_target_name(self) -> None:
+        capture = capture_from_pseudocode(SAME_NAMED_FIELD_CONFLICT_SAMPLE)
+        plan = build_clean_plan(capture)
+        rename_map = {item.old: item.new for item in plan.renames if item.apply}
+        rendered = render_cleaned_pseudocode(capture, plan)
+
+        self.assertNotIn("MappedSystemVa", rename_map)
+        self.assertIn("PVOID MappedSystemVa;", rendered)
+        self.assertIn("MappedSystemVa = object->MappedSystemVa;", rendered)
+
+    def test_same_named_field_local_yields_to_stronger_suggestion(self) -> None:
+        class FakeProvider:
+            def suggest_renames(self, capture):
+                return json.dumps(
+                    {
+                        "renames": [
+                            {"old": "MappedSystemVa", "new": "mappedAddress", "confidence": 0.90},
+                        ]
+                    }
+                )
+
+        capture = capture_from_pseudocode(SAME_NAMED_FIELD_LOCAL_SAMPLE)
+        plan = build_clean_plan(capture, rename_provider=FakeProvider())
+        rename_map = {item.old: item.new for item in plan.renames if item.apply}
+        rendered = render_cleaned_pseudocode(capture, plan)
+
+        self.assertEqual(rename_map["MappedSystemVa"], "mappedAddress")
+        self.assertIn("mappedAddress = object->MappedSystemVa;", rendered)
+        self.assertNotIn("object->mappedAddress", rendered)
 
 
 if __name__ == "__main__":

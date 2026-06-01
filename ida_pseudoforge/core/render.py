@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -10,6 +11,7 @@ from ida_pseudoforge.core.plan_schema import CleanPlan, FunctionCapture
 from ida_pseudoforge.core.render_call_args import (
     rewrite_parameter_low_byte_call_arguments as _rewrite_parameter_low_byte_call_arguments,
 )
+from ida_pseudoforge.core.render_cleanup import apply_generic_render_cleanups
 from ida_pseudoforge.core.render_dispatcher import (
     replace_char_literal_cases as _replace_char_literal_cases,
     rewrite_process_information_class_literals as _rewrite_process_information_class_literals,
@@ -98,6 +100,7 @@ def render_cleaned_pseudocode(capture: FunctionCapture, plan: CleanPlan) -> str:
     text = _replace_status_literals(text, capture, plan)
     text = apply_kernel_rewrites(text, plan)
     text = apply_kernel_api_rewrites(text)
+    text = apply_generic_render_cleanups(text, scratch_sinks=_scratch_sink_names(plan))
     text = _upgrade_kernel_status_types(text, capture, plan)
     text = _apply_known_function_signature(text, capture)
     text = _apply_known_callback_signature(text, capture)
@@ -122,11 +125,12 @@ def render_cleaned_pseudocode(capture: FunctionCapture, plan: CleanPlan) -> str:
     if prelude:
         text = prelude + text
     context = context.with_native_switch_metadata(text)
+    rendered_rename_map = _rename_map_used_in_text(context.rename_map, text)
 
     header = _render_header_lines(
         context.capture,
         context.plan,
-        context.rename_map,
+        rendered_rename_map,
         context.display_warnings,
         context.native_switch_dispatchers,
         VERSION,
@@ -180,3 +184,23 @@ def render_switch_outline(
 def _safe_file_stem(name: str) -> str:
     cleaned = "".join(char if char.isalnum() or char in "._-" else "_" for char in name)
     return cleaned.strip("._") or "function"
+
+
+def _rename_map_used_in_text(rename_map: dict[str, str], text: str) -> dict[str, str]:
+    result = {}
+    for old, new in rename_map.items():
+        if _identifier_exists(text, new):
+            result[old] = new
+    return result
+
+
+def _identifier_exists(text: str, name: str) -> bool:
+    return bool(re.search(r"\b%s\b" % re.escape(name), text or ""))
+
+
+def _scratch_sink_names(plan: CleanPlan) -> set[str]:
+    return {
+        item.new
+        for item in plan.renames
+        if item.apply and "scratch sink" in (item.evidence or "").lower()
+    }

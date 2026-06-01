@@ -338,6 +338,7 @@ def _source_priority(source: str) -> int:
         "pattern": 80,
         "rule": 70,
         "llm": 50,
+        "field-fallback": 45,
     }
     return priorities.get(source, 40)
 

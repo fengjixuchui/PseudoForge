@@ -72,12 +72,17 @@ def render_header_lines(
             header.append(f"      - ... {len(display_warnings) - 8} more warning(s)")
 
     if rename_map:
-        rename_items = {item.old: item for item in plan.renames if item.apply}
+        rename_items = {
+            item.old: item
+            for item in plan.renames
+            if item.apply and rename_map.get(item.old) == item.new
+        }
         pairs = ", ".join(
             f"{old}->{item.new}({item.confidence:.2f},{item.source})"
             for old, item in sorted(rename_items.items())
         )
-        header.append(f"    Renames: {pairs}")
+        if pairs:
+            header.append(f"    Renames: {pairs}")
 
     header.append("*/")
     return header

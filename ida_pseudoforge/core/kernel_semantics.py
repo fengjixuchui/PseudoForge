@@ -885,43 +885,49 @@ def _memory_manager_probe_local_rename_roles(text: str) -> list[tuple[str, str, 
 
     for variable, new_name, evidence in (
         (
-            _assignment_lhs_for_call(text, "MmGetSystemRoutineAddress"),
+            _stable_assignment_lhs_for_call(text, "MmGetSystemRoutineAddress"),
             "systemRoutineAddress",
             "Local receives MmGetSystemRoutineAddress result",
         ),
         (
-            _assignment_lhs_for_call(text, "ExAllocatePool2"),
+            _stable_assignment_lhs_for_call(text, "ExAllocatePool2"),
             "poolBuffer",
             "Local receives ExAllocatePool2 scratch buffer",
         ),
         (
-            _assignment_lhs_for_call(text, "IoAllocateMdl"),
+            _stable_assignment_lhs_for_call(text, "IoAllocateMdl"),
             "mdl",
             "Local receives IoAllocateMdl result",
         ),
         (
-            _assignment_lhs_for_call(text, "MmAllocateNonCachedMemory"),
+            _stable_assignment_lhs_for_call(text, "MmAllocateNonCachedMemory"),
             "nonCachedMemory",
             "Local receives MmAllocateNonCachedMemory result",
         ),
         (
-            _assignment_lhs_for_call(text, "MmAllocateContiguousMemorySpecifyCache"),
+            _stable_assignment_lhs_for_call(text, "MmAllocateContiguousMemorySpecifyCache"),
             "contiguousMemory",
             "Local receives MmAllocateContiguousMemorySpecifyCache result",
         ),
         (
-            _assignment_lhs_for_call(text, "MmIsAddressValid"),
+            _stable_assignment_lhs_for_call(text, "MmIsAddressValid"),
             "isAddressValid",
             "Local receives MmIsAddressValid result",
         ),
         (
-            _assignment_lhs_for_call(text, "MmGetPhysicalAddress"),
+            _stable_assignment_lhs_for_call(text, "MmGetPhysicalAddress"),
             "physicalAddress",
             "Local receives MmGetPhysicalAddress result",
         ),
     ):
         if variable:
             roles.append((variable, new_name, evidence))
+
+    probe_sink = _memory_manager_probe_sink_variable(text)
+    if probe_sink:
+        roles.append(
+            (probe_sink, "probeSinkValue", "Scratch sink records heterogeneous memory-manager probe results")
+        )
 
     routine_name = _mm_system_routine_name_variable(text)
     if routine_name:
@@ -981,6 +987,14 @@ def _assignment_lhs_for_call(text: str, call_name: str) -> str:
     return match.group("lhs")
 
 
+def _stable_assignment_lhs_for_call(text: str, call_name: str) -> str:
+    for variable in _assignment_lhs_for_calls(text, (call_name,)).get(call_name, []):
+        if _is_unstable_assignment_sink(text, variable):
+            continue
+        return variable
+    return ""
+
+
 def _assignment_lhs_for_calls(text: str, call_names) -> dict[str, list[str]]:
     result: dict[str, list[str]] = {}
     for call_name in call_names:
@@ -991,6 +1005,63 @@ def _assignment_lhs_for_calls(text: str, call_names) -> dict[str, list[str]]:
         )
         result[call_name] = matches
     return result
+
+
+def _is_unstable_assignment_sink(text: str, name: str) -> bool:
+    rhs_values = _nontrivial_direct_assignment_rhs_values(text, name)
+    if len(rhs_values) <= 1:
+        return False
+    if _is_decompiler_global_name(name):
+        return True
+    return len(rhs_values) >= 3
+
+
+def _memory_manager_probe_sink_variable(text: str) -> str:
+    assignments = _direct_assignment_rhs_by_lhs(text)
+    for name, rhs_values in assignments.items():
+        if not _is_decompiler_global_name(name):
+            continue
+        nontrivial_values = [rhs for rhs in rhs_values if not _is_zero_like_rhs(rhs)]
+        if len(nontrivial_values) < 4:
+            continue
+        joined = "\n".join(nontrivial_values)
+        if re.search(
+            r"\bMm[A-Za-z0-9_]*\b|\bMdl\b|->(?:ByteCount|ByteOffset|MappedSystemVa|StartVa)\b",
+            joined,
+        ):
+            return name
+    return ""
+
+
+def _nontrivial_direct_assignment_rhs_values(text: str, name: str) -> list[str]:
+    return [rhs for rhs in _direct_assignment_rhs_values(text, name) if not _is_zero_like_rhs(rhs)]
+
+
+def _direct_assignment_rhs_values(text: str, name: str) -> list[str]:
+    return _direct_assignment_rhs_by_lhs(text).get(name, [])
+
+
+def _direct_assignment_rhs_by_lhs(text: str) -> dict[str, list[str]]:
+    result: dict[str, list[str]] = {}
+    for match in re.finditer(
+        r"(?m)^\s*(?P<lhs>[A-Za-z_][A-Za-z0-9_]*)\s*=\s*(?P<rhs>[^;\n]+);",
+        text or "",
+    ):
+        result.setdefault(match.group("lhs"), []).append(match.group("rhs").strip())
+    return result
+
+
+def _is_zero_like_rhs(rhs: str) -> bool:
+    return bool(
+        re.fullmatch(
+            r"(?:\([^)]*\)\s*)?(?:0|0u|0LL|0i64|NULL|nullptr|FALSE|false)",
+            (rhs or "").strip(),
+        )
+    )
+
+
+def _is_decompiler_global_name(name: str) -> bool:
+    return bool(re.fullmatch(r"(?:qword|dword|word|byte|off|unk)_[0-9A-Fa-f]+", name or ""))
 
 
 def _first_single_routine_assignment_lhs(candidates: list[str], lhs_routine_count: dict[str, set[str]]) -> str:
@@ -1013,13 +1084,23 @@ def _mm_system_routine_name_variable(text: str) -> str:
 
 
 def _mm_copy_memory_bytes_variable(text: str) -> str:
-    match = re.search(
-        r"\bMmCopyMemory\s*\([^;]*,\s*&(?P<bytes>[A-Za-z_][A-Za-z0-9_]*)\s*\)",
-        text,
+    for arguments in extract_call_arguments(text, "MmCopyMemory"):
+        if len(arguments) < 5:
+            continue
+        variable = _out_argument_identifier(arguments[4])
+        if variable:
+            return variable
+    return ""
+
+
+def _out_argument_identifier(argument: str) -> str:
+    match = re.fullmatch(
+        r"(?:\([^)]*\)\s*)*&?\s*(?P<name>[A-Za-z_][A-Za-z0-9_]*)",
+        (argument or "").strip(),
     )
     if match is None:
         return ""
-    return match.group("bytes")
+    return match.group("name")
 
 
 def _mm_copy_memory_target_variable(text: str) -> str:
@@ -1033,7 +1114,7 @@ def _mm_copy_memory_target_variable(text: str) -> str:
 
 
 def _pool_source_buffer_variable(text: str) -> str:
-    pool = _assignment_lhs_for_call(text, "ExAllocatePool2")
+    pool = _stable_assignment_lhs_for_call(text, "ExAllocatePool2")
     if not pool:
         return ""
     match = re.search(
@@ -1041,9 +1122,16 @@ def _pool_source_buffer_variable(text: str) -> str:
         % re.escape(pool),
         text,
     )
-    if match is None:
-        return ""
-    return match.group("source")
+    if match is not None:
+        return match.group("source")
+    match = re.search(
+        r"\*\s*%s\s*=\s*(?P<source>[A-Za-z_][A-Za-z0-9_]*)\s*\[\s*0\s*\]\s*;"
+        % re.escape(pool),
+        text or "",
+    )
+    if match is not None:
+        return match.group("source")
+    return ""
 
 
 def _zw_api_probe_local_rename_roles(text: str) -> list[tuple[str, str, str]]:

@@ -18,6 +18,7 @@ def display_warnings(plan: CleanPlan) -> list[object]:
         and not _is_callback_registration_display_warning(warning, plan)
         and not _is_registry_callback_display_warning(warning, plan)
         and not _is_zw_api_probe_display_warning(warning, plan)
+        and not _is_memory_manager_probe_display_warning(warning, plan)
     ]
     return sorted(warnings, key=_warning_display_rank)
 
@@ -121,6 +122,20 @@ def _is_zw_api_probe_display_warning(warning: object, plan: CleanPlan) -> bool:
     )
 
 
+def _is_memory_manager_probe_display_warning(warning: object, plan: CleanPlan) -> bool:
+    if not _has_comment_kind(plan, "memory_manager_probe"):
+        return False
+    text = format_warning(warning)
+    lowered = text.lower()
+    if re.match(r"^Skipped (?:PascalCase LLM|LLM) rename sub_[0-9A-Fa-f]+->", text):
+        return True
+    if re.match(r"^Skipped LLM rename v\d+->", text) and "low confidence" in lowered:
+        return True
+    if _is_probe_purpose_advisory(text):
+        return True
+    return _is_decompiler_temp_only_advisory(text) or _is_handled_rename_advisory(text, plan)
+
+
 def _is_irp_device_control_display_warning(warning: object, plan: CleanPlan) -> bool:
     if not _plan_has_ioctl_dispatcher(plan):
         return False
@@ -194,6 +209,85 @@ def _has_applied_rename(plan: CleanPlan, old: str, new: str, source: str | None 
             continue
         return True
     return False
+
+
+def _is_handled_rename_advisory(text: str, plan: CleanPlan) -> bool:
+    if _looks_actionable_warning_text(text):
+        return False
+    handled_by_old = {
+        rename.old: rename
+        for rename in plan.renames
+        if rename.apply and rename.source != "llm" and rename.old
+    }
+    mentioned = [handled_by_old[name] for name in _code_identifiers_in_text(text) if name in handled_by_old]
+    if not mentioned:
+        return False
+    if len(mentioned) >= 2:
+        return True
+    return _is_decompiler_global_name(mentioned[0].old)
+
+
+def _is_probe_purpose_advisory(text: str) -> bool:
+    if _looks_actionable_warning_text(text):
+        return False
+    lowered = (text or "").lower()
+    has_probe_context = any(term in lowered for term in ("self-test", "probe", "diagnostic", "corpus"))
+    has_observational_language = any(term in lowered for term in ("debug", "exercis", "scratch", "result sink"))
+    return has_probe_context and has_observational_language
+
+
+def _is_decompiler_temp_only_advisory(text: str) -> bool:
+    if _looks_actionable_warning_text(text):
+        return False
+    identifiers = _code_identifiers_in_text(text)
+    return bool(identifiers) and all(re.fullmatch(r"v\d+", name) for name in identifiers)
+
+
+def _code_identifiers_in_text(text: str) -> set[str]:
+    result: set[str] = set()
+    for token in re.findall(r"\b[A-Za-z_][A-Za-z0-9_]*\b", text or ""):
+        if re.fullmatch(r"v\d+|[A-Za-z]+_[0-9A-Fa-f]+", token):
+            result.add(token)
+        elif _looks_like_pascal_local_name(token):
+            result.add(token)
+    return result
+
+
+def _looks_like_pascal_local_name(token: str) -> bool:
+    return bool(re.fullmatch(r"[A-Z][A-Za-z0-9_]*", token or "")) and any(char.islower() for char in token)
+
+
+def _is_decompiler_global_name(name: str) -> bool:
+    return bool(re.fullmatch(r"(?:byte|word|dword|qword|xmmword|ymmword|unk|off|stru|algn)_[0-9A-Fa-f]+", name or ""))
+
+
+def _looks_actionable_warning_text(text: str) -> bool:
+    lowered = (text or "").lower()
+    actionable_terms = {
+        "bad call target",
+        "bug",
+        "corrupt",
+        "crash",
+        "danger",
+        "double free",
+        "failfast",
+        "failure path",
+        "invalid",
+        "leak",
+        "missing",
+        "mismatch",
+        "not freed",
+        "not initialized",
+        "overflow",
+        "race",
+        "truncat",
+        "unchecked",
+        "uninitialized",
+        "unsafe",
+        "use-after",
+        "wrong",
+    }
+    return any(term in lowered for term in actionable_terms)
 
 
 def _is_routine_skipped_rename_warning(warning: object, plan: CleanPlan) -> bool:

@@ -59,6 +59,41 @@ class RenderWarningsTests(unittest.TestCase):
 
         self.assertEqual(display_warnings(plan), ["Manual review required"])
 
+    def test_display_warnings_hides_memory_manager_probe_llm_noise(self) -> None:
+        plan = _plan(
+            [
+                "Skipped PascalCase LLM rename sub_1400030F4->ProbeMemoryManagementApis",
+                "DestinationString and Mdl are already covered by stronger deterministic names.",
+                "v2/v3/v4 are __int128 SSE temporaries used only to shuffle the decompiler copy sequence.",
+                "qword_1400060A0 receives several unrelated probe outputs during this diagnostic routine.",
+                "MappedSystemVa, NonCachedMemory, and ContiguousMemorySpecifyCache are covered by "
+                "non-LLM naming rules.",
+                "Skipped LLM rename v2->owordTmp1: low confidence 0.60",
+                "Function looks like a kernel memory-API self-test exercising pool and MDL allocation paths.",
+                "qword_1400060A0 is a global repeatedly overwritten as a scratch/result sink across many Mm calls.",
+                "Pool2 may leak on failure path",
+            ],
+            comments=[{"kind": "memory_manager_probe"}],
+            renames=[
+                RenameSuggestion("lvar", "DestinationString", "systemRoutineName", 0.94, "kernel-mm-probe", "test"),
+                RenameSuggestion("lvar", "Mdl", "mdl", 0.94, "kernel-mm-probe", "test"),
+                RenameSuggestion("lvar", "qword_1400060A0", "probeSinkValue", 0.94, "kernel-mm-probe", "test"),
+                RenameSuggestion("lvar", "MappedSystemVa", "mappedSystemVa", 0.84, "pattern", "test"),
+                RenameSuggestion("lvar", "NonCachedMemory", "nonCachedMemory", 0.94, "kernel-mm-probe", "test"),
+                RenameSuggestion(
+                    "lvar",
+                    "ContiguousMemorySpecifyCache",
+                    "contiguousMemory",
+                    0.94,
+                    "kernel-mm-probe",
+                    "test",
+                ),
+                RenameSuggestion("lvar", "Pool2", "poolBuffer", 0.94, "kernel-mm-probe", "test"),
+            ],
+        )
+
+        self.assertEqual(display_warnings(plan), ["Pool2 may leak on failure path"])
+
     def test_format_warning_handles_structured_and_json_warnings(self) -> None:
         self.assertEqual(
             format_warning({"old": "sub_140001000", "reason": "unresolved indirect call"}),

@@ -82,6 +82,86 @@ void sub_1400047F0()
 """
 
 
+MEMORY_MANAGER_REUSED_PROBE_SINK_SAMPLE = r"""
+void sub_1400030F4()
+{
+  _OWORD *Pool2; // rax
+  void *v1; // rsi
+  __int128 v2; // xmm1
+  __int128 v3; // xmm0
+  __int128 v4; // xmm1
+  struct _MDL *Mdl; // rax
+  struct _MDL *v6; // rdi
+  PVOID MappedSystemVa; // rax
+  PVOID NonCachedMemory; // rax
+  PVOID ContiguousMemorySpecifyCache; // rax
+  ULONG BugCheckOnFailure[2]; // [rsp+38h] [rbp-59h] BYREF
+  struct _UNICODE_STRING DestinationString; // [rsp+40h] [rbp-51h] BYREF
+  _OWORD v12[4]; // [rsp+58h] [rbp-39h] BYREF
+  _BYTE v13[64]; // [rsp+98h] [rbp+7h] BYREF
+
+  *(_QWORD *)BugCheckOnFailure = 0LL;
+  sub_1400045C0(v12, 0LL, 64LL);
+  sub_1400045C0(v13, 0LL, 64LL);
+  RtlInitUnicodeString(&DestinationString, L"ZwClose");
+  qword_1400060A0 = (__int64)MmGetSystemRoutineAddress(&DestinationString);
+  Pool2 = (_OWORD *)ExAllocatePool2(0x40uLL, 64LL, 0x744B4650u);
+  qword_1400060A0 = (__int64)Pool2;
+  v1 = Pool2;
+  if ( Pool2 )
+  {
+    v2 = v12[1];
+    *Pool2 = v12[0];
+    v3 = v12[2];
+    Pool2[1] = v2;
+    v4 = v12[3];
+    Pool2[2] = v3;
+    Pool2[3] = v4;
+    qword_1400060A0 = MmIsAddressValid(Pool2);
+    qword_1400060A0 = MmGetPhysicalAddress(v1).QuadPart;
+    MmCopyMemory(v13, v1, 64LL, 2LL, BugCheckOnFailure);
+    qword_1400060A0 = *(_QWORD *)BugCheckOnFailure;
+    Mdl = IoAllocateMdl(v1, 0x40u, 0, 0, 0LL);
+    qword_1400060A0 = (__int64)Mdl;
+    v6 = Mdl;
+    if ( Mdl )
+    {
+      MmBuildMdlForNonPagedPool(Mdl);
+      if ( (v6->MdlFlags & 5) != 0 )
+      {
+        MappedSystemVa = v6->MappedSystemVa;
+      }
+      else
+      {
+        MappedSystemVa = MmMapLockedPagesSpecifyCache(v6, 0, MmCached, 0LL, 0, 0x10u);
+      }
+      qword_1400060A0 = (__int64)MappedSystemVa;
+      qword_1400060A0 = v6->ByteCount;
+      IoFreeMdl(v6);
+    }
+    ExFreePoolWithTag(v1, 0x744B4650u);
+  }
+  NonCachedMemory = MmAllocateNonCachedMemory(0x40uLL);
+  qword_1400060A0 = (__int64)NonCachedMemory;
+  if ( NonCachedMemory )
+  {
+    MmFreeNonCachedMemory(NonCachedMemory, 0x40uLL);
+  }
+  ContiguousMemorySpecifyCache = MmAllocateContiguousMemorySpecifyCache(
+                                   0x1000uLL,
+                                   0LL,
+                                   (PHYSICAL_ADDRESS)0x7FFFFFFFFFFFFFFFLL,
+                                   0LL,
+                                   MmCached);
+  qword_1400060A0 = (__int64)ContiguousMemorySpecifyCache;
+  if ( ContiguousMemorySpecifyCache )
+  {
+    MmFreeContiguousMemory(ContiguousMemorySpecifyCache);
+  }
+}
+"""
+
+
 class RenderMemoryTests(unittest.TestCase):
     def test_memory_manager_probe_gets_mm_semantics(self):
         capture = capture_from_pseudocode(MEMORY_MANAGER_PROBE_SAMPLE)
@@ -128,6 +208,50 @@ class RenderMemoryTests(unittest.TestCase):
         )
         partial_plan = build_clean_plan(capture_from_pseudocode(partial_sample))
         self.assertFalse(any(comment.get("kind") == "memory_manager_probe" for comment in partial_plan.comments))
+
+    def test_memory_manager_probe_uses_neutral_name_for_reused_probe_sink(self):
+        capture = capture_from_pseudocode(MEMORY_MANAGER_REUSED_PROBE_SINK_SAMPLE)
+        plan = build_clean_plan(capture)
+        rename_map = {item.old: item.new for item in plan.renames if item.apply}
+        rendered = render_cleaned_pseudocode(capture, plan)
+
+        self.assertEqual(rename_map["qword_1400060A0"], "probeSinkValue")
+        self.assertEqual(rename_map["BugCheckOnFailure"], "bytesCopied")
+        self.assertEqual(rename_map["DestinationString"], "systemRoutineName")
+        self.assertEqual(rename_map["Pool2"], "poolBuffer")
+        self.assertEqual(rename_map["Mdl"], "mdl")
+        self.assertEqual(rename_map["MappedSystemVa"], "mappedSystemVa")
+        self.assertEqual(rename_map["v12"], "sourceBuffer")
+        self.assertNotEqual(rename_map["qword_1400060A0"], "systemRoutineAddress")
+        self.assertIn("SIZE_T bytesCopied; // [rsp+38h] [rbp-59h] BYREF", rendered)
+        self.assertIn("bytesCopied = 0LL;", rendered)
+        self.assertIn("sub_1400045C0(sourceBuffer, 0LL, 64LL);", rendered)
+        self.assertIn("sub_1400045C0(copyBuffer, 0LL, 64LL);", rendered)
+        self.assertIn("(void)MmGetSystemRoutineAddress(&systemRoutineName);", rendered)
+        self.assertIn("qmemcpy(poolBuffer, sourceBuffer, sizeof(sourceBuffer));", rendered)
+        self.assertIn("(void)MmIsAddressValid(poolBuffer);", rendered)
+        self.assertIn("(void)MmGetPhysicalAddress(poolBuffer);", rendered)
+        self.assertIn("MmCopyMemory(copyBuffer, poolBuffer, 64LL, MM_COPY_MEMORY_VIRTUAL, &bytesCopied);", rendered)
+        self.assertIn("mdl = IoAllocateMdl(poolBuffer, 0x40u, FALSE, FALSE, 0LL);", rendered)
+        self.assertIn("if ( (mdl->MdlFlags & 5) == 0 )", rendered)
+        self.assertIn("(void)MmMapLockedPagesSpecifyCache(mdl, 0, MmCached, 0LL, 0, 0x10u);", rendered)
+        self.assertIn("IoFreeMdl(mdl);", rendered)
+        self.assertNotIn("systemRoutineAddress = (__int64)MmGetSystemRoutineAddress", rendered)
+        self.assertNotIn("probeSinkValue", rendered.rsplit("*/", 1)[-1])
+        self.assertNotIn("void *v1;", rendered)
+        self.assertNotIn("struct _MDL *v6;", rendered)
+        self.assertNotIn("PVOID MappedSystemVa;", rendered)
+        self.assertNotIn("PVOID mappedSystemVa;", rendered)
+        self.assertNotIn("mappedSystemVa", rendered.rsplit("*/", 1)[-1])
+        self.assertNotIn("mdl->MappedSystemVa", rendered.rsplit("*/", 1)[-1])
+        self.assertNotIn("__int128 v2;", rendered)
+        self.assertNotIn("__int128 v3;", rendered)
+        self.assertNotIn("__int128 v4;", rendered)
+        self.assertNotIn("poolBuffer[1]", rendered)
+        self.assertNotIn("v2 = sourceBuffer", rendered)
+        self.assertNotIn("v1", rendered.rsplit("*/", 1)[-1])
+        self.assertNotIn("v6", rendered.rsplit("*/", 1)[-1])
+        self.assertNotIn("BugCheckOnFailure", rendered.rsplit("*/", 1)[-1])
 
 
 if __name__ == "__main__":

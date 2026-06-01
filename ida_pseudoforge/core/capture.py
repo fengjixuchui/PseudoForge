@@ -13,6 +13,7 @@ from ida_pseudoforge.core.plan_schema import FunctionCapture, LocalVariable
 
 DECL_RE = re.compile(
     r"^\s*(?P<type>(?:const\s+)?[A-Za-z_][A-Za-z0-9_:\s\*\&<>]*?)\s+"
+    r"(?P<ptr>[\*\&]\s*)?"
     r"(?P<name>[A-Za-z_][A-Za-z0-9_]*)\s*(?:;|=|,|\[)"
 )
 
@@ -56,12 +57,16 @@ def _extract_declared_lvars(pseudocode: str) -> list[LocalVariable]:
             continue
         match = DECL_RE.match(line)
         if not match:
-            if lvars and not stripped.startswith(("__", "_", "P", "K", "U", "H", "int", "char", "void")):
+            if lvars and not stripped.startswith(("__", "_", "P", "K", "U", "H", "int", "char", "void", "struct")):
                 break
             continue
         var_name = match.group("name")
         if var_name in seen:
             continue
         seen.add(var_name)
-        lvars.append(LocalVariable(name=var_name, type=match.group("type").strip()))
+        var_type = match.group("type").strip()
+        ptr = (match.group("ptr") or "").strip()
+        if ptr:
+            var_type = f"{var_type} {ptr}"
+        lvars.append(LocalVariable(name=var_name, type=var_type))
     return lvars

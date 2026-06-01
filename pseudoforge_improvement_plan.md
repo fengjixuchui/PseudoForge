@@ -721,6 +721,24 @@ Completed:
 - [x] Moved Memory Manager probe regressions for `MmGetSystemRoutineAddress`,
   `MmCopyMemory`, MDL, noncached memory, and contiguous memory cleanup into
   `tests/test_render_memory.py`.
+- [x] Added Memory Manager probe coverage for reused qword probe sinks and bare
+  array `MmCopyMemory` byte-count output arguments.
+- [x] Added generic render cleanup coverage for scalar out-parameter arrays and
+  single-assignment pointer aliases without binding the rule to one API name.
+- [x] Added generic render cleanup for complete unrolled `_OWORD`/`__int128`
+  array copies, folding compiler spill temporaries into `qmemcpy(...,
+  sizeof(source))` only when the source array, destination, full index coverage,
+  and temp liveness all validate.
+- [x] Added scratch-sink cleanup that suppresses write-only diagnostic captures
+  only when a deterministic rename identifies the sink role, preserves probed
+  call side effects as `(void)Call(...)`, and removes follow-up write-only locals
+  only when they were introduced by the suppressed scratch observation.
+- [x] Added generic same-named struct-field local rename coverage so locals such
+  as `MappedSystemVa = object->MappedSystemVa` render as lower-camel locals
+  without rewriting the structure field name.
+- [x] Filtered preview rename and warning headers after final render cleanup so
+  alias-folded names and Memory Manager LLM rename noise do not pollute the
+  displayed summary.
 - [x] Moved bounded logging rotation regression into `tests/test_logging.py`.
 - [x] Moved plugin version/manifest parity regression into
   `tests/test_release_pseudoforge.py`.
