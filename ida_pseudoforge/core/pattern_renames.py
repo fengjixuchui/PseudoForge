@@ -547,11 +547,25 @@ def _returns_first_parameter(text: str, name: str) -> bool:
         r"\b(?P<alias>[A-Za-z_][A-Za-z0-9_]*)\s*=\s*(?:\([^)]+\)\s*)?%s\s*;" % escaped
     )
     for match in alias_pattern.finditer(text):
-        alias = re.escape(match.group("alias"))
-        tail = text[match.end() :]
-        if re.search(r"\breturn\s+%s\s*;" % alias, tail):
+        alias_name = match.group("alias")
+        if _alias_is_returned_without_reassignment(text, alias_name, match.end()):
             return True
     return False
+
+
+def _alias_is_returned_without_reassignment(text: str, alias_name: str, start_index: int) -> bool:
+    escaped = re.escape(alias_name)
+    tail = text[start_index:]
+    return_match = re.search(r"\breturn\s+%s\s*;" % escaped, tail)
+    if not return_match:
+        return False
+    before_return = tail[: return_match.start()]
+    mutation_match = re.search(
+        r"(?m)^\s*%s\s*(?:[-+*/%%&|^]?=|\+\+|--)|^\s*(?:\+\+|--)\s*%s\b"
+        % (escaped, escaped),
+        before_return,
+    )
+    return mutation_match is None
 
 
 def _is_pointer_type(type_text: str) -> bool:

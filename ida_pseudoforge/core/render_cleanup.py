@@ -234,6 +234,20 @@ def _single_assignment_pointer_aliases(text: str) -> list[tuple[str, str]]:
             continue
         if target not in declared:
             continue
+        declaration_match = _local_declaration_match(text, alias)
+        prefix = text[: assignments[0].start()]
+        if declaration_match is not None:
+            prefix = prefix[: declaration_match.start()] + prefix[declaration_match.end() :]
+        if re.search(r"\b%s\b" % re.escape(alias), prefix):
+            continue
+        text_without_assignment = text[: assignments[0].start()] + text[assignments[0].end() :]
+        if declaration_match is not None:
+            text_without_assignment = (
+                text_without_assignment[: declaration_match.start()]
+                + text_without_assignment[declaration_match.end() :]
+            )
+        if _has_direct_alias_mutation(text_without_assignment, alias):
+            continue
         if len(re.findall(r"(?m)^\s*%s\s*=" % re.escape(alias), text)) != 1:
             continue
         if re.search(r"&\s*%s\b" % re.escape(alias), text):
@@ -253,6 +267,14 @@ def _is_write_only_assignment_sink(text: str, name: str, min_assignments: int = 
     if declaration:
         without_assignments = _text_without_match(without_assignments, declaration)
     return re.search(r"\b%s\b" % re.escape(name), without_assignments) is None
+
+
+def _has_direct_alias_mutation(text: str, alias: str) -> bool:
+    escaped = re.escape(alias)
+    return bool(
+        re.search(r"(?m)^\s*%s\s*(?:[-+*/%%&|^]?=|\+\+|--)" % escaped, text)
+        or re.search(r"(?m)^\s*(?:\+\+|--)\s*%s\b" % escaped, text)
+    )
 
 
 def _rewrite_scratch_sink_assignments(text: str, name: str) -> tuple[str, set[str]]:

@@ -117,6 +117,50 @@ class RenderCleanupTests(unittest.TestCase):
         self.assertIn("alias = canonical;", rendered)
         self.assertIn("Probe(&alias);", rendered)
 
+    def test_pointer_alias_fold_skips_alias_used_before_assignment(self) -> None:
+        text = "\n".join(
+            [
+                "void sample()",
+                "{",
+                "  _QWORD *canonical;",
+                "  _QWORD *alias;",
+                "",
+                "  Probe(alias);",
+                "  alias = canonical;",
+                "  alias[1] = tail;",
+                "}",
+            ]
+        )
+
+        rendered = apply_generic_render_cleanups(text)
+
+        self.assertIn("_QWORD *alias;", rendered)
+        self.assertIn("Probe(alias);", rendered)
+        self.assertIn("alias = canonical;", rendered)
+        self.assertIn("alias[1] = tail;", rendered)
+
+    def test_pointer_alias_fold_skips_mutated_aliases(self) -> None:
+        text = "\n".join(
+            [
+                "void sample()",
+                "{",
+                "  _BYTE *canonical;",
+                "  _BYTE *alias;",
+                "",
+                "  alias = canonical;",
+                "  ++alias;",
+                "  Probe(alias);",
+                "}",
+            ]
+        )
+
+        rendered = apply_generic_render_cleanups(text)
+
+        self.assertIn("_BYTE *alias;", rendered)
+        self.assertIn("alias = canonical;", rendered)
+        self.assertIn("++alias;", rendered)
+        self.assertIn("Probe(alias);", rendered)
+
     def test_unrolled_wide_array_copy_rewrites_to_qmemcpy(self) -> None:
         text = "\n".join(
             [

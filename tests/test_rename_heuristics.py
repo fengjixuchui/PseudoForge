@@ -320,6 +320,42 @@ __int64 __fastcall ThreeArgumentArithmeticSample(char *a1, unsigned __int8 a2, u
 """
 
 
+RUNTIME_MEMORY_REASSIGNED_RESULT_SAMPLE = r"""
+void *__fastcall ReassignedResultSample(char *a1, char *a2, unsigned __int64 a3)
+{
+  void *result;
+  signed __int64 v4;
+
+  result = a1;
+  v4 = a2 - a1;
+  if ( a2 < a1 && a3 )
+  {
+    a1[a3 - 1] = a2[a3 - 1];
+  }
+  result = a2;
+  return result;
+}
+"""
+
+
+RUNTIME_MEMORY_MUTATED_RESULT_SAMPLE = r"""
+void *__fastcall MutatedResultSample(char *a1, char *a2, unsigned __int64 a3)
+{
+  char *result;
+  signed __int64 v4;
+
+  result = a1;
+  v4 = a2 - a1;
+  if ( a2 < a1 && a3 )
+  {
+    a1[a3 - 1] = a2[a3 - 1];
+  }
+  ++result;
+  return result;
+}
+"""
+
+
 OUTPUT_BUFFER_CONTRACT_SAMPLE = r"""
 __int64 __fastcall OutputBufferContractSample(__int64 a1, _DWORD *a2, unsigned int a3, _QWORD *a4)
 {
@@ -645,6 +681,26 @@ __int64 __fastcall TextLvarMergeSample()
         self.assertNotIn("destination", rename_map.values())
         self.assertNotIn("fillByte", rename_map.values())
         self.assertIn("argument2 > 4", rendered)
+
+    def test_runtime_memory_parameter_rename_rejects_reassigned_result_alias(self) -> None:
+        capture = capture_from_pseudocode(RUNTIME_MEMORY_REASSIGNED_RESULT_SAMPLE)
+        plan = build_clean_plan(capture)
+        rename_map = {item.old: item.new for item in plan.renames if item.apply}
+        rendered = render_cleaned_pseudocode(capture, plan)
+
+        self.assertNotIn("destination", rename_map.values())
+        self.assertIn("result = argument0;", rendered)
+        self.assertIn("result = argument1;", rendered)
+
+    def test_runtime_memory_parameter_rename_rejects_mutated_result_alias(self) -> None:
+        capture = capture_from_pseudocode(RUNTIME_MEMORY_MUTATED_RESULT_SAMPLE)
+        plan = build_clean_plan(capture)
+        rename_map = {item.old: item.new for item in plan.renames if item.apply}
+        rendered = render_cleaned_pseudocode(capture, plan)
+
+        self.assertNotIn("destination", rename_map.values())
+        self.assertIn("result = argument0;", rendered)
+        self.assertIn("++result;", rendered)
 
     def test_output_buffer_contract_parameters_get_dataflow_names(self) -> None:
         capture = capture_from_pseudocode(OUTPUT_BUFFER_CONTRACT_SAMPLE)
